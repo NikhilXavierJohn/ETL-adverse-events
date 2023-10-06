@@ -21,8 +21,8 @@ transform_data:
 	spark-submit transform_and_load_data.py $(INPUT_DIR)
 
 # Target to load the transformed data into a Spark table
-load_data:
-	spark-submit load_data.py
+read_data:
+	spark-submit read_data_from_hdfs.py
 
 # Define a target for cleaning up temporary files (optional)
 clean:
