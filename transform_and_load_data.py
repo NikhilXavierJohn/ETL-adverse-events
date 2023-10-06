@@ -4,28 +4,23 @@ import sys
 
 from pyspark import SparkConf, SparkContext
 from pyspark.sql import Row, SparkSession
-from pyspark.sql.types import (
-    ArrayType,
-    IntegerType,
-    StringType,
-    StructField,
-    StructType,
-)
+from pyspark.sql.types import ArrayType, StringType, StructField, StructType
 
 # Initialize Spark
 conf = SparkConf().setAppName("AdverseEventETL")
 sc = SparkContext(conf=conf)
 spark = SparkSession(sc)
 
-# Define input and output directories
+# Define input directories
 input_dir = sys.argv[1]
-
+hdfs_url = sys.argv[2]
+cpu_count = int(os.cpu_count())
 # Load JSON files as RDDs and merge them
 data_rdds = []
 for filename in os.listdir(input_dir):
     if filename.endswith(".json"):
         file_path = os.path.join(input_dir, filename)
-        data_rdd = sc.textFile(file_path).map(lambda x: json.loads(x))
+        data_rdd = sc.textFile(file_path,minPartitions=cpu_count).map(lambda x: json.loads(x))
         data_rdds.append(data_rdd)
 
 merged_data_rdd = sc.union(data_rdds)
@@ -50,7 +45,6 @@ selected_fields_rdd = merged_data_rdd.flatMap(
     ]
 )
 
-# Optionally, you can apply additional RDD transformations or filters here.
 schema = StructType(
     [
         StructField("safetyreportid", StringType(), True),
@@ -87,8 +81,10 @@ data_df = spark.createDataFrame(row_rdd, schema=schema)
 
 # # Create a temporary Spark table (view) from the DataFrame
 data_df.createOrReplaceTempView("adverse_events")
+# # display the Dataframe
+print(data_df.show())
 
-data_df.show()
-data_df.write.mode("overwrite").parquet("hdfs://localhost:9820/output/data.parquet")
+# # write the dataframe to a parquet in a HDFS system
+data_df.write.mode("overwrite").parquet(hdfs_url)
 # # Stop SparkContext
 sc.stop()

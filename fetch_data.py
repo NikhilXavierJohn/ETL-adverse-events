@@ -15,11 +15,19 @@ base_url = "https://api.fda.gov/drug/event.json?"
 
 # Create a directory to store fetched data
 output_dir = sys.argv[1]
+api_limit = str(sys.argv[2])
 os.makedirs(output_dir, exist_ok=True)
 
 
 def create_data_json(category):
-    url = f"{base_url}search=patient.drug.openfda.pharm_class_epc:{category}&limit=100"
+    """
+    The create_data_json function takes a category as an argument and fetches the data from the OpenFDA API.
+    It then writes that data to a JSON file in the output directory.
+
+    :param category: Define the category of drugs to fetch data for
+    :return: A output file name string
+    """
+    url = f"{base_url}search=patient.drug.openfda.pharm_class_epc:{category}&limit={api_limit}"
     print(f"Getting data for {category.replace('+','_')}")
     # Send a GET request to the OpenFDA API
     response = requests.get(url)
